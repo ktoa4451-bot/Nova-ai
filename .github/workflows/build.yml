@@ -1,0 +1,32 @@
+name: Build Nova
+on: [push, workflow_dispatch]
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack ZIP
+        shell: pwsh
+        run: Expand-Archive Nova-v2.zip -DestinationPath src
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: npm install
+        working-directory: src
+      - run: npm run dist
+        working-directory: src
+      - uses: actions/upload-artifact@v4
+        with: {name: Nova-Windows, path: src/dist/*.exe}
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack ZIP
+        run: unzip -q Nova-v2.zip -d src
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: 17}
+      - uses: gradle/actions/setup-gradle@v4
+        with: {gradle-version: 8.7}
+      - run: gradle assembleDebug --no-daemon
+        working-directory: src/android
+      - uses: actions/upload-artifact@v4
+        with: {name: Nova-Android, path: src/android/app/build/outputs/apk/debug/*.apk}
